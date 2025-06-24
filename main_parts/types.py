@@ -64,29 +64,3 @@ class TubRecord(object):
 
     def __repr__(self) -> str:
         return repr(self.underlying)
-
-
-class TubDataset(object):
-    """
-    Loads the dataset and creates a TubRecord list (or list of lists).
-    """
-
-    def __init__(self, config: Config, tub_paths: List[str],
-                 seq_size: int = 0) -> None:
-        self.config = config
-        self.tub_paths = tub_paths
-        self.tubs: List[Tub] = [Tub(tub_path, read_only=True)
-                                for tub_path in self.tub_paths]
-        self.records: List[TubRecord] = list()
-        self.train_filter = getattr(config, 'TRAIN_FILTER', None)
-        self.seq_size = seq_size
-
-    def get_records(self):
-        if not self.records:
-            print(f'Loading tubs from paths {self.tub_paths}')
-            for tub in self.tubs:
-                for underlying in tub:
-                    record = TubRecord(self.config, tub.base_path, underlying)
-                    if not self.train_filter or self.train_filter(record):
-                        self.records.append(record)
-        return self.records
