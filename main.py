@@ -151,12 +151,6 @@ def parse_args() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        "--myconfig",
-        metavar="FILE",
-        default="config.py",
-        help="chemin vers un fichier de configuration personnalisé",
-    )
-    parser.add_argument(
         "--js",
         action="store_true",
         help="utiliser une manette (joystick)",
@@ -171,5 +165,5 @@ def parse_args() -> argparse.Namespace:
 
 if __name__ == '__main__':
     args = parse_args()
-    cfg = load_config(myconfig=args.myconfig)
+    cfg = load_config()
     drive(cfg, use_joystick=args.js, model_type=args.type)

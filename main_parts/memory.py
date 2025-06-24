@@ -28,9 +28,7 @@ class Memory:
             return [self.d[k] for k in key]
         else:
             return self.d[key]
-        
-    def update(self, new_d):
-        self.d.update(new_d)
+
         
     def put(self, keys, inputs):
         if len(keys) > 1:
@@ -49,13 +47,3 @@ class Memory:
     def get(self, keys):
         result = [self.d.get(k) for k in keys]
         return result
-    
-    def keys(self):
-        return self.d.keys()
-    
-    def values(self):
-        return self.d.values()
-    
-    def items(self):
-        return self.d.items()
-        

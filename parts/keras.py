@@ -167,32 +167,6 @@ class KerasPilot(ABC):
             
         return history.history
 
-    def x_transform(
-            self,
-            record: Union[TubRecord, List[TubRecord]],
-            img_processor: Callable[[np.ndarray], np.ndarray]) \
-            -> Dict[str, Union[float, np.ndarray]]:
-        assert isinstance(record, TubRecord), "TubRecord required"
-        img_arr = record.image(processor=img_processor)
-        return {'img_in': img_arr}
-
-    def y_transform(self, record: Union[TubRecord, List[TubRecord]]) \
-            -> Dict[str, Union[float, List[float]]]:
-        """ Transforms the record into dictionary for y for training the
-        model to x,y. All model ouputs layer's names must be matched by
-        dictionary keys. """
-        raise NotImplementedError(f'{self} not ready yet for new training '
-                                  f'pipeline')
-
-    def output_types(self) -> Tuple[Dict[str, np.typename], ...]:
-        """ Used in tf.data, assume all types are doubles"""
-        shapes = self.output_shapes()
-        types = tuple({k: tf.float64 for k in d} for d in shapes)
-        return types
-
-    def output_shapes(self) -> Dict[str, tf.TensorShape]:
-        return {}
-
     def __str__(self) -> str:
         """ For printing model initialisation """
         return type(self).__name__
@@ -215,21 +189,6 @@ class KerasLinear(KerasPilot):
         steering = interpreter_out[0]
         throttle = interpreter_out[1]
         return steering[0], throttle[0]
-
-    def y_transform(self, record: Union[TubRecord, List[TubRecord]]) \
-            -> Dict[str, Union[float, List[float]]]:
-        assert isinstance(record, TubRecord), 'TubRecord expected'
-        angle: float = record.underlying['user/angle']
-        throttle: float = record.underlying['user/throttle']
-        return {'n_outputs0': angle, 'n_outputs1': throttle}
-
-    def output_shapes(self):
-        # need to cut off None from [None, 120, 160, 3] tensor shape
-        img_shape = self.get_input_shapes()[0][1:]
-        shapes = ({'img_in': tf.TensorShape(img_shape)},
-                  {'n_outputs0': tf.TensorShape([]),
-                   'n_outputs1': tf.TensorShape([])})
-        return shapes
 
 class KerasIMU(KerasPilot):
     """
@@ -260,34 +219,6 @@ class KerasIMU(KerasPilot):
         steering = interpreter_out[0]
         throttle = interpreter_out[1]
         return steering[0], throttle[0]
-
-    def x_transform(
-            self,
-            record: Union[TubRecord, List[TubRecord]],
-            img_processor: Callable[[np.ndarray], np.ndarray]) \
-            -> Dict[str, Union[float, np.ndarray]]:
-        # this transforms the record into x for training the model to x,y
-        assert isinstance(record, TubRecord), 'TubRecord expected'
-        img_arr = record.image(processor=img_processor)
-        imu_arr = np.array([record.underlying[k] for k in self.imu_vec])
-        return {'img_in': img_arr, 'imu_in': imu_arr}
-
-    def y_transform(self, record: Union[TubRecord, List[TubRecord]]) \
-            -> Dict[str, Union[float, List[float]]]:
-        assert isinstance(record, TubRecord), "TubRecord expected"
-        angle: float = record.underlying['user/angle']
-        throttle: float = record.underlying['user/throttle']
-        return {'out_0': angle, 'out_1': throttle}
-
-    def output_shapes(self):
-        # need to cut off None from [None, 120, 160, 3] tensor shape
-        img_shape = self.get_input_shapes()[0][1:]
-        # the keys need to match the models input/output layers
-        shapes = ({'img_in': tf.TensorShape(img_shape),
-                   'imu_in': tf.TensorShape([self.num_imu_inputs])},
-                  {'out_0': tf.TensorShape([]),
-                   'out_1': tf.TensorShape([])})
-        return shapes
 
 def conv2d(filters, kernel, strides, layer_num, activation='relu'):
     return Convolution2D(filters=filters,

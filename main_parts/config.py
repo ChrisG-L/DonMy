@@ -35,25 +35,17 @@ class Config:
                 print(attr, ":", getattr(self, attr))
 
 
-def load_config(config_path=None, myconfig="myconfig.py"):
+def load_config(config_path=None):
     
-    if config_path is None:
-        import __main__ as main
-        main_path = os.path.dirname(os.path.realpath(main.__file__))
-        config_path = os.path.join(main_path, 'config.py')
-        if not os.path.exists(config_path):
-            local_config = os.path.join(os.path.curdir, 'config.py')
-            if os.path.exists(local_config):
-                config_path = local_config
-    
+    import __main__ as main
+    main_path = os.path.dirname(os.path.realpath(main.__file__))
+    config_path = os.path.join(main_path, 'config.py')
+    if not os.path.exists(config_path):
+        local_config = os.path.join(os.path.curdir, 'config.py')
+        if os.path.exists(local_config):
+            config_path = local_config
+
     cfg = Config()
     cfg.from_pyfile(config_path)
-
-    # look for the optional myconfig.py in the same path.
-    personal_cfg_path = config_path.replace("config.py", myconfig)
-    if os.path.exists(personal_cfg_path):
-        personal_cfg = Config()
-        personal_cfg.from_pyfile(personal_cfg_path)
-        cfg.from_object(personal_cfg)
 
     return cfg

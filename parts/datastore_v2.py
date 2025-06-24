@@ -152,9 +152,6 @@ class Catalog(object):
                                  line_lengths=self.manifest.line_lengths(),
                                  read_only=read_only)
 
-    def _exit_handler(self):
-        self.close()
-
     def write_record(self, record):
         # Add record and update manifest
         contents = json.dumps(record, allow_nan=False, sort_keys=True)

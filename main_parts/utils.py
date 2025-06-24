@@ -20,9 +20,6 @@ class EqMemorizedString:
         self.mem.add(other)
         return self.string == other
 
-    def mem_as_str(self):
-        return ', '.join(self.mem)
-
 
 '''
 IMAGES
@@ -105,9 +102,6 @@ def load_image_sized(filename, image_width, image_height, image_depth):
     except Exception as e:
         print(f'failed to load image from {filename}: {e.message}')
         return None
-
-def is_number_type(i):
-    return type(i) == int or type(i) == float;
 
 def get_model_by_type(model_type: str, cfg: 'Config'):
     '''
