@@ -1,8 +1,6 @@
 import atexit
 import os
 import time
-from datetime import datetime
-import json
 
 import numpy as np
 from PIL import Image

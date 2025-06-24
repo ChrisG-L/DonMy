@@ -4,8 +4,6 @@ utils.py
 Functions that don't fit anywhere else.
 
 '''
-from typing import List, Any, Tuple, Union
-
 from PIL import Image
 import numpy as np
 

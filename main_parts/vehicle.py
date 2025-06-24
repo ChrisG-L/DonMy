@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import time
-import numpy as np
 from threading import Thread
 from .memory import Memory
 import traceback

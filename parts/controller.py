@@ -2,7 +2,6 @@ import os
 import array
 import time
 import struct
-from threading import Thread
 
 class Joystick(object):
     def __init__(self, dev_fn='/dev/input/js0'):

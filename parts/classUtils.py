@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import time
-
 class Pipe:
     def run(self, *args):
         # seems to be a python bug that takes a single argument
