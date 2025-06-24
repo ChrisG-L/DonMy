@@ -6,7 +6,7 @@ import time
 from main_parts.vehicle import Vehicle
 from main_parts.utils import get_model_by_type
 from main_parts.config import load_config
-from parts.classUtils import TriggeredCallback, DelayedTrigger, ToggleRecording, Pipe, DriveMode
+from parts.classUtils import ToggleRecording, DriveMode
 
 from parts.oakd_camera import OakDCamera
 from parts.tub_v2 import TubWriter
@@ -22,8 +22,6 @@ def drive(cfg, model_path="./models/mypilot.tflite", use_joystick=False, model_t
 
     ctr = add_user_controller(V, cfg, use_joystick)
 
-    V.add(Pipe(), inputs=['user/steering'], outputs=['user/angle'])
-
     add_imu(V, cfg)
 
     def load_model(kl, model_path):
@@ -36,19 +34,7 @@ def drive(cfg, model_path="./models/mypilot.tflite", use_joystick=False, model_t
     if not use_joystick:
         kl = get_model_by_type(model_type, cfg)
 
-        model_reload_cb = None
         load_model(kl, model_path)
-
-        def reload_model(filename):
-            print("\n\n\nModel Reload\n\n\n")
-            load_model(kl, filename)
-
-        model_reload_cb = reload_model
-
-        V.add(DelayedTrigger(100), inputs=['modelfile/dirty'],
-              outputs=['modelfile/reload'], run_condition="run_pilot")
-        V.add(TriggeredCallback(model_path, model_reload_cb),
-              inputs=["modelfile/reload"], run_condition="run_pilot")
 
         if model_type == "imu":
             assert cfg.HAVE_IMU, 'Missing imu parameter in config'
@@ -107,7 +93,7 @@ def add_user_controller(V, cfg, use_joystick, input_image='ui/image_array'):
         V.add(
             ctr,
             inputs=[input_image, 'user/mode', 'recording'],
-            outputs=['user/steering', 'user/throttle',
+            outputs=['user/angle', 'user/throttle',
                         'user/mode', 'recording'],
             threaded=True)
     return ctr

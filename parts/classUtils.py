@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
 
-class Pipe:
-    def run(self, *args):
-        # seems to be a python bug that takes a single argument
-        # return makes it into two element tuple with empty last element.
-        return args if len(args) > 1 else args[0]
-
 class ToggleRecording:
     def __init__(self, auto_record_on_throttle=True, record_in_autopilot=False):
         self.auto_record_on_throttle = auto_record_on_throttle
@@ -55,34 +49,3 @@ class DriveMode:
             return pilot_steering if pilot_steering else 0.0, user_throttle
         return (pilot_steering if pilot_steering else 0.0,
                pilot_throttle * self.ai_throttle_mult if pilot_throttle else 0.0)
-
-class TriggeredCallback:
-    def __init__(self, args, func_cb):
-        self.args = args
-        self.func_cb = func_cb
-
-    def run(self, trigger):
-        if trigger:
-            self.func_cb(self.args)
-
-    def shutdown(self):
-        return
-
-class DelayedTrigger:
-    def __init__(self, delay):
-        self.ticks = 0
-        self.delay = delay
-
-    def run(self, trigger):
-        if self.ticks > 0:
-            self.ticks -= 1
-            if self.ticks == 0:
-                return True
-
-        if trigger:
-            self.ticks = self.delay
-
-        return False
-
-    def shutdown(self):
-        return
