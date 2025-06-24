@@ -1,6 +1,6 @@
 """
 actuators.py
-Classes to control the motors and servos. These classes 
+Classes to control the motors and servos. These classes
 are wrapped in a mixer class before being used in the drive loop.
 """
 

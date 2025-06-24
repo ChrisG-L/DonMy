@@ -50,7 +50,7 @@ def load_pil_image(filename, cfg):
 
         if cfg.IMAGE_DEPTH == 1:
             img = img.convert('L')
-        
+
         return img
 
     except Exception as e:

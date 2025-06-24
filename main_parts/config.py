@@ -4,7 +4,7 @@ import types
 
 
 class Config:
-    
+
     def from_pyfile(self, filename):
         d = types.ModuleType('config')
         d.__file__ = filename
@@ -16,12 +16,12 @@ class Config:
             raise
         self.from_object(d)
         return True
-    
+
     def from_object(self, obj):
         for key in dir(obj):
             if key.isupper():
                 setattr(self, key, getattr(obj, key))
-                
+
     def __str__(self):
         result = []
         for key in dir(self):
@@ -36,7 +36,7 @@ class Config:
 
 
 def load_config(config_path=None):
-    
+
     import __main__ as main
     main_path = os.path.dirname(os.path.realpath(main.__file__))
     config_path = os.path.join(main_path, 'config.py')

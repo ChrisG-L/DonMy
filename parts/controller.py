@@ -271,7 +271,7 @@ class JoystickController(object):
             temp = 0
         self.throttle = max(-0.30, temp)
         self.on_throttle_changes()
-    
+
     def set_throttle_back(self, axis_val):
         #this value is often reversed, with positive value when pulling down
         self.last_throttle_axis_val = axis_val

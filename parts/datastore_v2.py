@@ -100,7 +100,7 @@ class Seekable(object):
             if len(self.cumulative_lengths) > 0 else 0
         self.seek_end_of_file()
         self.file.truncate()
-    
+
     def read_from(self, line_number):
         current_offset = self.file.tell()
         self.seek_line_start(line_number)
@@ -109,10 +109,10 @@ class Seekable(object):
         while len(contents) > 0:
             lines.append(contents)
             contents = self.readline()
-        
+
         self.file.seek(current_offset)
         return lines
-    
+
     def update_line(self, line_number, contents):
         lines = self.read_from(line_number)
         length = len(lines)

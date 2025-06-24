@@ -120,7 +120,7 @@ class TfLite(Interpreter):
         self.input_shapes = None
         self.input_details = None
         self.output_details = None
-    
+
     def load(self, model_path):
         assert os.path.splitext(model_path)[1] == '.tflite', \
             'TFlitePilot should load only .tflite files'

@@ -164,7 +164,7 @@ class KerasPilot(ABC):
             verbose=verbose,
             workers=1,
             use_multiprocessing=False)
-            
+
         return history.history
 
     def __str__(self) -> str:
@@ -278,12 +278,12 @@ def default_imu(num_outputs, num_imu_inputs, input_shape):
     x = core_cnn_layers(img_in, drop)
     x = Dense(100, activation='relu')(x)
     x = Dropout(.1)(x)
-    
+
     y = imu_in
     y = Dense(14, activation='relu')(y)
     y = Dense(14, activation='relu')(y)
     y = Dense(14, activation='relu')(y)
-    
+
     z = concatenate([x, y])
     z = Dense(50, activation='relu')(z)
     z = Dropout(.1)(z)
@@ -293,6 +293,6 @@ def default_imu(num_outputs, num_imu_inputs, input_shape):
     outputs = []
     for i in range(num_outputs):
         outputs.append(Dense(1, activation='linear', name='out_' + str(i))(z))
-        
+
     model = Model(inputs=[img_in, imu_in], outputs=outputs, name='imu')
     return model

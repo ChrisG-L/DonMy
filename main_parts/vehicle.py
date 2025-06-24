@@ -98,7 +98,7 @@ class Vehicle:
                 self.update_parts()
 
                 # stop drive loop if loop_count exceeds max_loopcount
-              
+
                 sleep_time = 1.0 / rate_hz - (time.time() - start_time)
                 if sleep_time > 0.0:
                     time.sleep(sleep_time)
@@ -125,7 +125,7 @@ class Vehicle:
             if entry.get('run_condition'):
                 run_condition = entry.get('run_condition')
                 run = self.mem.get([run_condition])[0]
-            
+
             if run:
                 # get part
                 p = entry['part']
@@ -141,7 +141,7 @@ class Vehicle:
                 if outputs is not None:
                     self.mem.put(entry['outputs'], outputs)
 
-    def stop(self):        
+    def stop(self):
         for entry in self.parts:
             try:
                 entry['part'].shutdown()
