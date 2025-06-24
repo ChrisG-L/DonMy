@@ -51,12 +51,6 @@ class Vehicle:
 
         self.parts.append(entry)
 
-    def remove(self, part):
-        """
-        remove part form list
-        """
-        self.parts.remove(part)
-
     def start(self, rate_hz=10, verbose=False):
         """
         Start vehicle's main drive loop.
