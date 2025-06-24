@@ -136,8 +136,7 @@ class KerasPilot(ABC):
               epochs: int,
               verbose: int = 1,
               min_delta: float = .0005,
-              patience: int = 5,
-              show_plot: bool = False) -> tf.keras.callbacks.History:
+              patience: int = 5) -> tf.keras.callbacks.History:
         """
         trains the model
         """
