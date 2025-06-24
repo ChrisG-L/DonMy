@@ -16,7 +16,7 @@ class Joystick(object):
                  dev_fn='/dev/input/js0',
                  poll_delay=0.0,
                  throttle_scale=0.05,
-                 steering_scale=1.0,
+                 angle_scale=1.0,
                  throttle_dir=-1.0,
                  auto_record_on_throttle=True):
 
@@ -69,7 +69,7 @@ class Joystick(object):
         self.running = True
         self.last_throttle_axis_val = 0
         self.throttle_scale = throttle_scale
-        self.steering_scale = steering_scale
+        self.angle_scale = angle_scale
         self.throttle_dir = throttle_dir
         self.recording = False
         self.recording_latch = None
@@ -87,7 +87,7 @@ class Joystick(object):
         }
 
         self.axis_trigger_map = {
-            'left_stick_horz': self.set_steering,
+            'left_stick_horz': self.set_angle,
             'R2_pressure': self.set_throttle,
             'L2_pressure': self.set_throttle_back,
         }
@@ -223,9 +223,9 @@ class Joystick(object):
         self.estop_state = self.ES_START
         self.throttle = 0.0
 
-    def set_steering(self, axis_val):
+    def set_angle(self, axis_val):
         """Définit l'angle de direction"""
-        self.angle = self.steering_scale * axis_val
+        self.angle = self.angle_scale * axis_val
 
     def set_throttle(self, axis_val):
         """Définit l'accélération avant"""

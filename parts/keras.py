@@ -186,14 +186,14 @@ class KerasLinear(KerasPilot):
         self.interpreter.compile(optimizer=self.optimizer, loss='mse')
 
     def interpreter_to_output(self, interpreter_out):
-        steering = interpreter_out[0]
+        angle = interpreter_out[0]
         throttle = interpreter_out[1]
-        return steering[0], throttle[0]
+        return angle[0], throttle[0]
 
 class KerasIMU(KerasPilot):
     """
     A Keras part that take an image and IMU vector as input,
-    outputs steering and throttle
+    outputs angle and throttle
     """
     # keys for imu data in TubRecord
     imu_vec = [f'imu/{f}_{x}' for f in ('acl', 'gyr') for x in 'xyz']
@@ -216,9 +216,9 @@ class KerasIMU(KerasPilot):
 
     def interpreter_to_output(self, interpreter_out) \
             -> Tuple[Union[float, np.ndarray], ...]:
-        steering = interpreter_out[0]
+        angle = interpreter_out[0]
         throttle = interpreter_out[1]
-        return steering[0], throttle[0]
+        return angle[0], throttle[0]
 
 def conv2d(filters, kernel, strides, layer_num, activation='relu'):
     return Convolution2D(filters=filters,

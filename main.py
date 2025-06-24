@@ -25,11 +25,9 @@ def drive(cfg, model_path="./models/mypilot.tflite", use_joystick=False, model_t
     add_imu(V, cfg)
 
     def load_model(kl, model_path):
-        start = time.time()
-        print("\n\n\nLOAD\n\n\n")
-        print('loading model', model_path)
+        print('\nloading model', model_path)
         kl.load(model_path)
-        print('finished loading in %s sec.' % (str(time.time() - start)) )
+        print('model loaded\n')
 
     if not use_joystick:
         kl = get_model_by_type(model_type, cfg)
@@ -58,7 +56,7 @@ def drive(cfg, model_path="./models/mypilot.tflite", use_joystick=False, model_t
     V.add(DriveMode(),
           inputs=['user/mode', 'user/angle', 'user/throttle',
                   'pilot/angle', 'pilot/throttle'],
-          outputs=['steering', 'throttle'])
+          outputs=['angle', 'throttle'])
 
     recording_control = ToggleRecording()
     V.add(recording_control, inputs=['user/mode', "recording"], outputs=["recording"])
@@ -111,9 +109,8 @@ def add_imu(V, cfg):
 
 def add_drivetrain(V):
     from parts.actuator import VESC
-    print("Creating VESC at port {}".format("/dev/ttyACM0"))
     vesc = VESC("/dev/ttyACM0")
-    V.add(vesc, inputs=['steering', 'throttle'])
+    V.add(vesc, inputs=['angle', 'throttle'])
 
 def parse_args() -> argparse.Namespace:
     """Configure and parse command-line options."""

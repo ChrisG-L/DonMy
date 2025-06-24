@@ -41,11 +41,11 @@ class DriveMode:
         self.ai_throttle_mult = ai_throttle_mult
 
     def run(self, mode,
-            user_steering, user_throttle,
-            pilot_steering, pilot_throttle):
+            user_angle, user_throttle,
+            pilot_angle, pilot_throttle):
         if mode == 'user':
-            return user_steering, user_throttle
+            return user_angle, user_throttle
         elif mode == 'local_angle':
-            return pilot_steering if pilot_steering else 0.0, user_throttle
-        return (pilot_steering if pilot_steering else 0.0,
+            return pilot_angle if pilot_angle else 0.0, user_throttle
+        return (pilot_angle if pilot_angle else 0.0,
                pilot_throttle * self.ai_throttle_mult if pilot_throttle else 0.0)
