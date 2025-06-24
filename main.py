@@ -15,7 +15,10 @@ def drive(cfg, model_path="./models/mypilot.tflite", use_joystick=False, model_t
 
     V = Vehicle()
 
-    add_camera(V, cfg)
+    cam = OakDCamera(width=cfg.IMAGE_W,
+            height=cfg.IMAGE_H,
+            fps=cfg.CAMERA_FRAMERATE)
+    V.add(cam, inputs=[], outputs=['cam/image_array'], threaded=True)
 
     ctr = add_user_controller(V, cfg, use_joystick)
 
@@ -108,22 +111,6 @@ def add_user_controller(V, cfg, use_joystick, input_image='ui/image_array'):
                         'user/mode', 'recording'],
             threaded=True)
     return ctr
-
-def add_camera(V, cfg):
-    """
-    Add the configured camera to the vehicle pipeline.
-
-    :param V: the vehicle pipeline.
-              On output this will be modified.
-    :param cfg: the configuration (from myconfig.py)
-    """
-    inputs = []
-    outputs = ['cam/image_array']
-    cam = OakDCamera(width=cfg.IMAGE_W,
-            height=cfg.IMAGE_H,
-            fps=cfg.CAMERA_FRAMERATE)
-    if cam:
-        V.add(cam, inputs=inputs, outputs=outputs, threaded=True)
 
 def add_imu(V, cfg):
     imu = None
