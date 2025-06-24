@@ -102,8 +102,8 @@ def drive(cfg, model_path="./models/mypilot.tflite", use_joystick=False, model_t
 def add_user_controller(V, cfg, use_joystick, input_image='ui/image_array'):
     ctr = None
     if use_joystick:
-        from parts.controller import get_js_controller
-        ctr = get_js_controller(cfg)
+        from parts.controller import Joystick
+        ctr = Joystick()
         V.add(
             ctr,
             inputs=[input_image, 'user/mode', 'recording'],

@@ -310,10 +310,3 @@ class Joystick(object):
         time.sleep(0.5)
         if self.jsdev:
             self.jsdev.close()
-
-def get_js_controller(cfg=None):
-    """
-    Fonction utilitaire pour créer et configurer un contrôleur de joystick
-    """
-    ctr = Joystick()
-    return ctr
