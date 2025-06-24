@@ -9,18 +9,6 @@ import numpy as np
 
 ONE_BYTE_SCALE = 1.0 / 255.0
 
-
-class EqMemorizedString:
-    """ String that remembers what it was compared against """
-    def __init__(self, string):
-        self.string = string
-        self.mem = set()
-
-    def __eq__(self, other):
-        self.mem.add(other)
-        return self.string == other
-
-
 '''
 IMAGES
 '''
@@ -119,7 +107,6 @@ def get_model_by_type(model_type: str, cfg: 'Config'):
         interpreter = TensorRT()
         used_model_type = model_type.replace('tensorrt_', '')
 
-    used_model_type = EqMemorizedString(used_model_type)
     if used_model_type == "linear":
         kl = KerasLinear(interpreter=interpreter, input_shape=input_shape)
     if used_model_type == "imu":
