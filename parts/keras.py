@@ -1,17 +1,7 @@
-"""
-
-keras.py
-
-Methods to create, use, save and load pilots. Pilots contain the highlevel
-logic used to determine the angle and throttle of a vehicle. Pilots can
-include one or more models to help direct the vehicles motion.
-
-"""
 import datetime
 from abc import ABC, abstractmethod
 
 import numpy as np
-from typing import Dict, Tuple, Optional, Union, List, Sequence, Callable
 
 from tensorflow.python.data.ops.dataset_ops import DatasetV1, DatasetV2
 
@@ -29,39 +19,34 @@ from tensorflow.keras.backend import concatenate
 from tensorflow.keras.models import Model
 from tensorflow.python.keras.callbacks import EarlyStopping, ModelCheckpoint
 
-# type of x
-XY = Union[float, np.ndarray, Tuple[Union[float, np.ndarray], ...]]
-
 class KerasPilot(ABC):
     def __init__(self,
-                 interpreter: Interpreter = KerasInterpreter(),
-                 input_shape: Tuple[int, ...] = (120, 160, 3)) -> None:
-        # self.model: Optional[Model] = None
+                 interpreter = KerasInterpreter(),
+                 input_shape = (120, 160, 3)):
         self.input_shape = input_shape
         self.optimizer = "adam"
         self.interpreter = interpreter
         self.interpreter.set_model(self)
         print(f'Created {self} with interpreter: {interpreter}')
 
-    def load(self, model_path: str) -> None:
+    def load(self, model_path):
         print(f'Loading model {model_path}')
         self.interpreter.load(model_path)
 
-    def load_weights(self, model_path: str, by_name: bool = True) -> None:
+    def load_weights(self, model_path, by_name = True):
         self.interpreter.load_weights(model_path, by_name=by_name)
 
-    def shutdown(self) -> None:
+    def shutdown(self):
         pass
 
-    def compile(self) -> None:
+    def compile(self):
         pass
 
     @abstractmethod
     def create_model(self):
         pass
 
-    def set_optimizer(self, optimizer_type: str,
-                      rate: float, decay: float) -> None:
+    def set_optimizer(self, optimizer_type, rate, decay):
         if optimizer_type == "adam":
             optimizer = keras.optimizers.Adam(lr=rate, decay=decay)
         elif optimizer_type == "sgd":
@@ -72,62 +57,42 @@ class KerasPilot(ABC):
             raise Exception(f"Unknown optimizer type: {optimizer_type}")
         self.interpreter.set_optimizer(optimizer)
 
-    def get_input_shapes(self) -> List[tf.TensorShape]:
+    def get_input_shapes(self):
         return self.interpreter.get_input_shapes()
 
-    def seq_size(self) -> int:
+    def seq_size(self):
         return 0
 
-    def run(self, img_arr: np.ndarray, other_arr: List[float] = None) \
-            -> Tuple[Union[float, np.ndarray], ...]:
+    def run(self, img_arr, other_arr = None) :
         norm_arr = normalize_image(img_arr)
         np_other_array = np.array(other_arr) if other_arr else None
         return self.inference(norm_arr, np_other_array)
 
-    def inference(self, img_arr: np.ndarray, other_arr: Optional[np.ndarray]) \
-            -> Tuple[Union[float, np.ndarray], ...]:
-        """ Inferencing using the interpreter
-            :param img_arr:     float32 [0,1] numpy array with normalized image
-                                data
-            :param other_arr:   numpy array of additional data to be used in the
-                                pilot, like IMU array for the IMU model or a
-                                state vector in the Behavioural model
-            :return:            tuple of (angle, throttle)
-        """
+    def inference(self, img_arr, other_arr):
         out = self.interpreter.predict(img_arr, other_arr)
         return self.interpreter_to_output(out)
 
-    def inference_from_dict(self, input_dict: Dict[str, np.ndarray]) \
-            -> Tuple[Union[float, np.ndarray], ...]:
-        """ Inferencing using the interpreter
-            :param input_dict:  input dictionary of str and np.ndarray
-            :return:            typically tuple of (angle, throttle)
-        """
+    def inference_from_dict(self, input_dict):
         output = self.interpreter.predict_from_dict(input_dict)
         return self.interpreter_to_output(output)
 
     @abstractmethod
     def interpreter_to_output(
             self,
-            interpreter_out: Sequence[Union[float, np.ndarray]]) \
-            -> Tuple[Union[float, np.ndarray], ...]:
-        """ Virtual method to be implemented by child classes for conversion
-            :param interpreter_out:  input data
-            :return:                 output values, possibly tuple of np.ndarray
-        """
+            interpreter_out):
         pass
 
     def train(self,
-              model_path: str,
-              train_data: Union[DatasetV1, DatasetV2],
-              train_steps: int,
-              batch_size: int,
-              validation_data: Union[DatasetV1, DatasetV2],
-              validation_steps: int,
-              epochs: int,
-              verbose: int = 1,
-              min_delta: float = .0005,
-              patience: int = 5) -> tf.keras.callbacks.History:
+              model_path,
+              train_data,
+              train_steps,
+              batch_size,
+              validation_data,
+              validation_steps,
+              epochs,
+              verbose = 1,
+              min_delta = .0005,
+              patience = 5):
         """
         trains the model
         """
@@ -146,7 +111,7 @@ class KerasPilot(ABC):
 
         tic = datetime.datetime.now()
         print('////////// Starting training //////////')
-        history: tf.keras.callbacks.History = model.fit(
+        history = model.fit(
             x=train_data,
             steps_per_epoch=train_steps,
             batch_size=batch_size,
@@ -163,9 +128,9 @@ class KerasPilot(ABC):
 
     def x_transform(
             self,
-            record: Union[TubRecord, List[TubRecord]],
-            img_processor: Callable[[np.ndarray], np.ndarray]) \
-            -> Dict[str, Union[float, np.ndarray]]:
+            record,
+            img_processor) \
+            :
         """ Transforms the record into dictionary for x for training the
         model to x,y, and applies an image augmentation. Here we assume the
         model only takes the image as input. All model input layer's names
@@ -174,32 +139,32 @@ class KerasPilot(ABC):
         img_arr = record.image(processor=img_processor)
         return {'img_in': img_arr}
 
-    def y_transform(self, record: Union[TubRecord, List[TubRecord]]) \
-            -> Dict[str, Union[float, List[float]]]:
+    def y_transform(self, record) \
+            :
         """ Transforms the record into dictionary for y for training the
         model to x,y. All model ouputs layer's names must be matched by
         dictionary keys. """
         raise NotImplementedError(f'{self} not ready yet for new training '
                                   f'pipeline')
 
-    def output_types(self) -> Tuple[Dict[str, np.typename], ...]:
+    def output_types(self):
         """ Used in tf.data, assume all types are doubles"""
         shapes = self.output_shapes()
         types = tuple({k: tf.float64 for k in d} for d in shapes)
         return types
 
-    def output_shapes(self) -> Dict[str, tf.TensorShape]:
+    def output_shapes(self):
         return {}
 
-    def __str__(self) -> str:
+    def __str__(self):
         """ For printing model initialisation """
         return type(self).__name__
 
 class KerasLinear(KerasPilot):
     def __init__(self,
-                 interpreter: Interpreter = KerasInterpreter(),
-                 input_shape: Tuple[int, ...] = (120, 160, 3),
-                 num_outputs: int = 2):
+                 interpreter = KerasInterpreter(),
+                 input_shape = (120, 160, 3),
+                 num_outputs = 2):
         self.num_outputs = num_outputs
         super().__init__(interpreter, input_shape)
 
@@ -214,8 +179,8 @@ class KerasLinear(KerasPilot):
         throttle = interpreter_out[1]
         return angle[0], throttle[0]
 
-    def y_transform(self, record: Union[TubRecord, List[TubRecord]]) \
-            -> Dict[str, Union[float, List[float]]]:
+    def y_transform(self, record) \
+            :
         assert isinstance(record, TubRecord), 'TubRecord expected'
         angle: float = record.underlying['user/angle']
         throttle: float = record.underlying['user/throttle']
@@ -234,9 +199,9 @@ class KerasIMU(KerasPilot):
     imu_vec = [f'imu/{f}_{x}' for f in ('acl', 'gyr') for x in 'xyz']
 
     def __init__(self,
-                 interpreter: Interpreter = KerasInterpreter(),
-                 input_shape: Tuple[int, ...] = (120, 160, 3),
-                 num_outputs: int = 2, num_imu_inputs: int = 6):
+                 interpreter = KerasInterpreter(),
+                 input_shape = (120, 160, 3),
+                 num_outputs = 2, num_imu_inputs = 6):
         self.num_outputs = num_outputs
         self.num_imu_inputs = num_imu_inputs
         super().__init__(interpreter, input_shape)
@@ -249,25 +214,24 @@ class KerasIMU(KerasPilot):
     def compile(self):
         self.interpreter.compile(optimizer=self.optimizer, loss='mse')
 
-    def interpreter_to_output(self, interpreter_out) \
-            -> Tuple[Union[float, np.ndarray], ...]:
+    def interpreter_to_output(self, interpreter_out) :
         angle = interpreter_out[0]
         throttle = interpreter_out[1]
         return angle[0], throttle[0]
 
     def x_transform(
             self,
-            record: Union[TubRecord, List[TubRecord]],
-            img_processor: Callable[[np.ndarray], np.ndarray]) \
-            -> Dict[str, Union[float, np.ndarray]]:
+            record,
+            img_processor) \
+            :
         # this transforms the record into x for training the model to x,y
         assert isinstance(record, TubRecord), 'TubRecord expected'
         img_arr = record.image(processor=img_processor)
         imu_arr = np.array([record.underlying[k] for k in self.imu_vec])
         return {'img_in': img_arr, 'imu_in': imu_arr}
 
-    def y_transform(self, record: Union[TubRecord, List[TubRecord]]) \
-            -> Dict[str, Union[float, List[float]]]:
+    def y_transform(self, record) \
+            :
         assert isinstance(record, TubRecord), "TubRecord expected"
         angle: float = record.underlying['user/angle']
         throttle: float = record.underlying['user/throttle']
