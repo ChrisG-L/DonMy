@@ -10,13 +10,6 @@ NEWLINE_STRIP = '\r\n'
 
 
 class Seekable(object):
-    """
-    A seekable file reader, writer which deals with newline delimited
-    records. \n
-    This reader maintains an index of line lengths, so seeking a line is a
-    O(1) operation.
-    """
-
     def __init__(self, file, read_only=False, line_lengths=list()):
         self.line_lengths = list()
         self.cumulative_lengths = list()
@@ -136,13 +129,6 @@ class Seekable(object):
 
 
 class Catalog(object):
-    '''
-    A new line delimited file that has records delimited by newlines. \n
-
-    [ json object record ] \n
-    [ json object record ] \n
-    ...
-    '''
     def __init__(self, path, read_only=False, start_index=0):
         self.path = Path(os.path.expanduser(path))
         self.manifest = CatalogMetadata(self.path,
@@ -165,9 +151,6 @@ class Catalog(object):
 
 
 class CatalogMetadata(object):
-    '''
-    Manifest for a Catalog
-    '''
     def __init__(self, catalog_path, read_only=False, start_index=0):
         path = Path(catalog_path)
         manifest_name = f'{path.stem}.catalog_manifest'
@@ -212,16 +195,6 @@ class CatalogMetadata(object):
 
 
 class Manifest(object):
-    '''
-    A newline delimited file, with the following format.
-
-    [ json array of inputs ]\n
-    [ json array of types ]\n
-    [ json object with user metadata ]\n
-    [ json object with manifest metadata ]\n
-    [ json object with catalog metadata ]\n
-    '''
-
     def __init__(self, base_path, inputs=[], types=[], metadata=[],
                  max_len=1000, read_only=False):
         self.base_path = Path(os.path.expanduser(base_path)).absolute()
@@ -349,7 +322,6 @@ class Manifest(object):
         self.seekeable.writeline(json.dumps(catalog_metadata))
 
     def create_new_session(self):
-        """ Creates a new session id and appends it to the metadata."""
         sessions = self.manifest_metadata.get('sessions', {})
         last_id = -1
         if sessions:
@@ -366,8 +338,6 @@ class Manifest(object):
         return this_full_id
 
     def close(self):
-        """ Closing tub closes open files for catalog, catalog manifest and
-            manifest.json"""
         # If records were received, write updated session_id dictionary into
         # the metadata, otherwise keep the session_id information unchanged
         if self._updated_session:
@@ -384,11 +354,6 @@ class Manifest(object):
 
 
 class ManifestIterator(object):
-    """
-    An iterator for the Manifest type. \n
-
-    Returns catalog entries lazily when a consumer calls __next__().
-    """
     def __init__(self, manifest):
         self.manifest = manifest
         self.has_catalogs = len(self.manifest.catalog_paths) > 0
