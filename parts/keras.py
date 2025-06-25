@@ -170,7 +170,7 @@ class KerasLinear(KerasPilot):
                   {'n_outputs0': tf.TensorShape([]),
                    'n_outputs1': tf.TensorShape([])})
         return shapes
-    
+
 class KerasMemory(KerasLinear):
     """
     The KerasLinearWithMemory is based on KerasLinear but uses the last n
@@ -180,47 +180,72 @@ class KerasMemory(KerasLinear):
     def __init__(self,
                  interpreter = KerasInterpreter(),
                  input_shape = (120, 160, 3),
-                 mem_length: int = 3,
-                 mem_depth: int = 0,
-                 mem_start_speed: float = 0.0,
-                 **kwargs):
+                 mem_length = 3,
+                 mem_depth = 0,
+                 mem_start_speed = 0.0):
         self.mem_length = mem_length
         self.mem_start_speed = mem_start_speed
-        # create memory of [anlge=0, throttle=mem_start_speed] * mem_length
-        self.mem_seq = deque([[0.0, mem_start_speed]] * mem_length)
+        self.mem_seq = deque([[0, mem_start_speed]] * mem_length)
         self.mem_depth = mem_depth
-        super().__init__(interpreter, input_shape, **kwargs)
+        super().__init__(interpreter, input_shape)
 
-    def seq_size(self) -> int:
+    def seq_size(self):
         return self.mem_length + 1
 
     def create_model(self):
         return default_memory(self.input_shape,
                               self.mem_length, self.mem_depth)
 
-    def load(self, model_path: str) -> None:
+    def load(self, model_path):
         super().load(model_path)
-        print("\n\n\n\n\nget_input_shapes\n\n\n\n\n")
-        print(f"\n\n\n\n\n{type(self.interpreter).__name__}\n\n\n\n\n")
-        mem_shape = self.interpreter.get_input_shapes('mem_in')
-        # take the mem_shape (index 1), the length (index 1) and divide by 2.
-        self.mem_length = mem_shape[1] // 2
-        # create memory of [anlge=0, throttle=mem_start_speed] * mem_length
-        self.mem_seq = deque([[0.0, self.mem_start_speed]] * self.mem_length)
-        print(f'Loaded {type(self).__name__} model with mem length'
-                    f' {self.mem_length}')
+        self.mem_length = self.interpreter.get_input_shapes()[1][1] // 2
+        self.mem_seq = deque([[0, self.mem_start_speed]] * self.mem_length)
+        print(f'Loaded memory model with mem length {self.mem_length}')
 
-    def run(self, img_arr: np.ndarray):
+    def run(self, img_arr, other_arr):
+        # Only called at start to fill the previous values
+
         np_mem_arr = np.array(self.mem_seq).reshape((2 * self.mem_length,))
-        norm_img_arr = normalize_image(img_arr)
-        values = (norm_img_arr, np_mem_arr)
-
-        input_dict = dict(zip(self.output_shapes()[0].keys(), values))
-        angle, throttle = self.inference_from_dict(input_dict)
-
+        img_arr_norm = normalize_image(img_arr)
+        angle, throttle = super().inference(img_arr_norm, np_mem_arr)
+        # fill new values into back of history list for next call
         self.mem_seq.popleft()
         self.mem_seq.append([angle, throttle])
         return angle, throttle
+
+    def x_transform(
+            self,
+            record,
+            img_processor):
+        assert isinstance(record, list), 'List[TubRecord] expected'
+        assert len(record) == self.mem_length + 1, \
+            f"Record list of length {self.mem_length} required but " \
+            f"{len(record)} was passed"
+        img_arr = record[-1].image(processor=img_processor)
+        mem = [[r.underlying['user/angle'], r.underlying['user/throttle']]
+               for r in record[:-1]]
+        np_mem = np.array(mem).reshape((2 * self.mem_length,))
+        return {'img_in': img_arr, 'mem_in': np_mem}
+
+    def y_transform(self, records):
+        assert isinstance(records, list), 'List[TubRecord] expected'
+        angle = records[-1].underlying['user/angle']
+        throttle = records[-1].underlying['user/throttle']
+        return {'n_outputs0': angle, 'n_outputs1': throttle}
+
+    def output_shapes(self):
+        # need to cut off None from [None, 120, 160, 3] tensor shape
+        img_shape = self.get_input_shapes()[0][1:]
+        shapes = ({'img_in': tf.TensorShape(img_shape),
+                   'mem_in': tf.TensorShape(2 * self.mem_length)},
+                  {'n_outputs0': tf.TensorShape([]),
+                   'n_outputs1': tf.TensorShape([])})
+        return shapes
+
+    def __str__(self) -> str:
+        """ For printing model initialisation """
+        return super().__str__() \
+            + f'-L:{self.mem_length}-D:{self.mem_depth}'
 
 def default_memory(input_shape=(120, 160, 3), mem_length=3, mem_depth=0):
     drop = 0.2
