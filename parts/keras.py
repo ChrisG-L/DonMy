@@ -7,7 +7,7 @@ logic used to determine the angle and throttle of a vehicle. Pilots can
 include one or more models to help direct the vehicles motion.
 
 """
-
+import datetime
 from abc import ABC, abstractmethod
 
 import numpy as np
@@ -80,15 +80,6 @@ class KerasPilot(ABC):
 
     def run(self, img_arr: np.ndarray, other_arr: List[float] = None) \
             -> Tuple[Union[float, np.ndarray], ...]:
-        """
-        Donkeycar parts interface to run the part in the loop.
-
-        :param img_arr:     uint8 [0,255] numpy array with image data
-        :param other_arr:   numpy array of additional data to be used in the
-                            pilot, like IMU array for the IMU model or a
-                            state vector in the Behavioural model
-        :return:            tuple of (angle, throttle)
-        """
         norm_arr = normalize_image(img_arr)
         np_other_array = np.array(other_arr) if other_arr else None
         return self.inference(norm_arr, np_other_array)
@@ -153,6 +144,8 @@ class KerasPilot(ABC):
                             save_best_only=True,
                             verbose=verbose)]
 
+        tic = datetime.datetime.now()
+        print('////////// Starting training //////////')
         history: tf.keras.callbacks.History = model.fit(
             x=train_data,
             steps_per_epoch=train_steps,
@@ -164,8 +157,39 @@ class KerasPilot(ABC):
             verbose=verbose,
             workers=1,
             use_multiprocessing=False)
-
+        toc = datetime.datetime.now()
+        print(f'////////// Finished training in: {toc - tic} //////////')
         return history.history
+
+    def x_transform(
+            self,
+            record: Union[TubRecord, List[TubRecord]],
+            img_processor: Callable[[np.ndarray], np.ndarray]) \
+            -> Dict[str, Union[float, np.ndarray]]:
+        """ Transforms the record into dictionary for x for training the
+        model to x,y, and applies an image augmentation. Here we assume the
+        model only takes the image as input. All model input layer's names
+        must be matched by dictionary keys."""
+        assert isinstance(record, TubRecord), "TubRecord required"
+        img_arr = record.image(processor=img_processor)
+        return {'img_in': img_arr}
+
+    def y_transform(self, record: Union[TubRecord, List[TubRecord]]) \
+            -> Dict[str, Union[float, List[float]]]:
+        """ Transforms the record into dictionary for y for training the
+        model to x,y. All model ouputs layer's names must be matched by
+        dictionary keys. """
+        raise NotImplementedError(f'{self} not ready yet for new training '
+                                  f'pipeline')
+
+    def output_types(self) -> Tuple[Dict[str, np.typename], ...]:
+        """ Used in tf.data, assume all types are doubles"""
+        shapes = self.output_shapes()
+        types = tuple({k: tf.float64 for k in d} for d in shapes)
+        return types
+
+    def output_shapes(self) -> Dict[str, tf.TensorShape]:
+        return {}
 
     def __str__(self) -> str:
         """ For printing model initialisation """
@@ -190,11 +214,22 @@ class KerasLinear(KerasPilot):
         throttle = interpreter_out[1]
         return angle[0], throttle[0]
 
+    def y_transform(self, record: Union[TubRecord, List[TubRecord]]) \
+            -> Dict[str, Union[float, List[float]]]:
+        assert isinstance(record, TubRecord), 'TubRecord expected'
+        angle: float = record.underlying['user/angle']
+        throttle: float = record.underlying['user/throttle']
+        return {'n_outputs0': angle, 'n_outputs1': throttle}
+
+    def output_shapes(self):
+        # need to cut off None from [None, 120, 160, 3] tensor shape
+        img_shape = self.get_input_shape('img_in')[1:]
+        shapes = ({'img_in': tf.TensorShape(img_shape)},
+                  {'n_outputs0': tf.TensorShape([]),
+                   'n_outputs1': tf.TensorShape([])})
+        return shapes
+
 class KerasIMU(KerasPilot):
-    """
-    A Keras part that take an image and IMU vector as input,
-    outputs angle and throttle
-    """
     # keys for imu data in TubRecord
     imu_vec = [f'imu/{f}_{x}' for f in ('acl', 'gyr') for x in 'xyz']
 
@@ -220,6 +255,34 @@ class KerasIMU(KerasPilot):
         throttle = interpreter_out[1]
         return angle[0], throttle[0]
 
+    def x_transform(
+            self,
+            record: Union[TubRecord, List[TubRecord]],
+            img_processor: Callable[[np.ndarray], np.ndarray]) \
+            -> Dict[str, Union[float, np.ndarray]]:
+        # this transforms the record into x for training the model to x,y
+        assert isinstance(record, TubRecord), 'TubRecord expected'
+        img_arr = record.image(processor=img_processor)
+        imu_arr = np.array([record.underlying[k] for k in self.imu_vec])
+        return {'img_in': img_arr, 'imu_in': imu_arr}
+
+    def y_transform(self, record: Union[TubRecord, List[TubRecord]]) \
+            -> Dict[str, Union[float, List[float]]]:
+        assert isinstance(record, TubRecord), "TubRecord expected"
+        angle: float = record.underlying['user/angle']
+        throttle: float = record.underlying['user/throttle']
+        return {'out_0': angle, 'out_1': throttle}
+
+    def output_shapes(self):
+        # need to cut off None from [None, 120, 160, 3] tensor shape
+        img_shape = self.get_input_shape('img_in')[1:]
+        # the keys need to match the models input/output layers
+        shapes = ({'img_in': tf.TensorShape(img_shape),
+                   'imu_in': tf.TensorShape([self.num_imu_inputs])},
+                  {'out_0': tf.TensorShape([]),
+                   'out_1': tf.TensorShape([])})
+        return shapes
+
 def conv2d(filters, kernel, strides, layer_num, activation='relu'):
     return Convolution2D(filters=filters,
                          kernel_size=(kernel, kernel),
@@ -227,17 +290,7 @@ def conv2d(filters, kernel, strides, layer_num, activation='relu'):
                          activation=activation,
                          name='conv2d_' + str(layer_num))
 
-
 def core_cnn_layers(img_in, drop, l4_stride=1):
-    """
-    Returns the core CNN layers that are shared among the different models,
-    like linear, imu, behavioural
-
-    :param img_in:          input layer of network
-    :param drop:            dropout rate
-    :param l4_stride:       4-th layer stride, default 1
-    :return:                stack of CNN layers
-    """
     x = img_in
     x = conv2d(24, 5, 2, 1)(x)
     x = Dropout(drop)(x)
@@ -251,7 +304,6 @@ def core_cnn_layers(img_in, drop, l4_stride=1):
     x = Dropout(drop)(x)
     x = Flatten(name='flattened')(x)
     return x
-
 
 def default_n_linear(num_outputs, input_shape=(120, 160, 3)):
     drop = 0.2
