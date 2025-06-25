@@ -18,6 +18,7 @@ from tensorflow.keras.layers import TimeDistributed as TD
 from tensorflow.keras.backend import concatenate
 from tensorflow.keras.models import Model
 from tensorflow.python.keras.callbacks import EarlyStopping, ModelCheckpoint
+from collections import deque
 
 class KerasPilot(ABC):
     def __init__(self,
@@ -169,6 +170,81 @@ class KerasLinear(KerasPilot):
                   {'n_outputs0': tf.TensorShape([]),
                    'n_outputs1': tf.TensorShape([])})
         return shapes
+    
+class KerasMemory(KerasLinear):
+    """
+    The KerasLinearWithMemory is based on KerasLinear but uses the last n
+    steering and throttle commands as input in order to produce smoother
+    steering outputs
+    """
+    def __init__(self,
+                 interpreter = KerasInterpreter(),
+                 input_shape = (120, 160, 3),
+                 mem_length: int = 3,
+                 mem_depth: int = 0,
+                 mem_start_speed: float = 0.0,
+                 **kwargs):
+        self.mem_length = mem_length
+        self.mem_start_speed = mem_start_speed
+        # create memory of [anlge=0, throttle=mem_start_speed] * mem_length
+        self.mem_seq = deque([[0.0, mem_start_speed]] * mem_length)
+        self.mem_depth = mem_depth
+        super().__init__(interpreter, input_shape, **kwargs)
+
+    def seq_size(self) -> int:
+        return self.mem_length + 1
+
+    def create_model(self):
+        return default_memory(self.input_shape,
+                              self.mem_length, self.mem_depth)
+
+    def load(self, model_path: str) -> None:
+        super().load(model_path)
+        mem_shape = self.interpreter.get_input_shape('mem_in')
+        # take the mem_shape (index 1), the length (index 1) and divide by 2.
+        self.mem_length = mem_shape[1] // 2
+        # create memory of [anlge=0, throttle=mem_start_speed] * mem_length
+        self.mem_seq = deque([[0.0, self.mem_start_speed]] * self.mem_length)
+        print(f'Loaded {type(self).__name__} model with mem length'
+                    f' {self.mem_length}')
+
+    def run(self, img_arr: np.ndarray):
+        np_mem_arr = np.array(self.mem_seq).reshape((2 * self.mem_length,))
+        norm_img_arr = normalize_image(img_arr)
+        values = (norm_img_arr, np_mem_arr)
+
+        input_dict = dict(zip(self.output_shapes()[0].keys(), values))
+        angle, throttle = self.inference_from_dict(input_dict)
+
+        self.mem_seq.popleft()
+        self.mem_seq.append([angle, throttle])
+        return angle, throttle
+
+def default_memory(input_shape=(120, 160, 3), mem_length=3, mem_depth=0):
+    drop = 0.2
+    drop2 = 0.1
+    print(f'Creating memory model with length {mem_length}, depth '
+                f'{mem_depth}')
+    img_in = Input(shape=input_shape, name='img_in')
+    x = core_cnn_layers(img_in, drop)
+    mem_in = Input(shape=(2 * mem_length,), name='mem_in')
+    y = mem_in
+    for i in range(mem_depth):
+        y = Dense(4 * mem_length, activation='relu', name=f'mem_{i}')(y)
+        y = Dropout(drop2)(y)
+    for i in range(1, mem_length):
+        y = Dense(2 * (mem_length - i), activation='relu', name=f'mem_c_{i}')(y)
+        y = Dropout(drop2)(y)
+    x = concatenate([x, y])
+    x = Dense(100, activation='relu', name='dense_1')(x)
+    x = Dropout(drop)(x)
+    x = Dense(50, activation='relu', name='dense_2')(x)
+    x = Dropout(drop)(x)
+    activation = ['tanh', 'sigmoid']
+    outputs = [Dense(1, activation=activation[i], name='n_outputs' + str(i))(x)
+               for i in range(2)]
+    model = Model(inputs=[img_in, mem_in], outputs=outputs, name='memory')
+    return model
 
 class KerasIMU(KerasPilot):
     imu_vec = [f'imu/{f}_{x}' for f in ('acl', 'gyr') for x in 'xyz']

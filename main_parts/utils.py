@@ -54,7 +54,7 @@ def load_image_sized(filename, image_width, image_height, image_depth):
         return None
 
 def get_model_by_type(model_type, cfg):
-    from parts.keras import KerasLinear, KerasIMU
+    from parts.keras import KerasMemory, KerasIMU
     from parts.interpreter import TfLite, TensorRT
 
     input_shape = (cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)
@@ -66,7 +66,7 @@ def get_model_by_type(model_type, cfg):
         used_model_type = model_type.replace('tensorrt_', '')
 
     if used_model_type == "linear":
-        kl = KerasLinear(interpreter=interpreter, input_shape=input_shape)
+        kl = KerasMemory(interpreter=interpreter, input_shape=input_shape)
     if used_model_type == "imu":
         kl = KerasIMU(interpreter=interpreter, input_shape=input_shape)
 
