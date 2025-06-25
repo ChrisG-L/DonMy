@@ -201,7 +201,8 @@ class KerasMemory(KerasLinear):
     def load(self, model_path: str) -> None:
         super().load(model_path)
         print("\n\n\n\n\nget_input_shapes\n\n\n\n\n")
-        mem_shape = self.interpreter.get_input_shape('mem_in')
+        print(f"\n\n\n\n\n{type(self.interpreter).__name__}\n\n\n\n\n")
+        mem_shape = self.interpreter.get_input_shapes('mem_in')
         # take the mem_shape (index 1), the length (index 1) and divide by 2.
         self.mem_length = mem_shape[1] // 2
         # create memory of [anlge=0, throttle=mem_start_speed] * mem_length
