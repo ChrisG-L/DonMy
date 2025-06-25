@@ -113,7 +113,7 @@ def add_imu(V, cfg):
 
 def add_drivetrain(V):
     from parts.actuator import VESC
-    vesc = VESC("/dev/ttyACM0")
+    vesc = VESC("/dev/ttyACM1")
     V.add(vesc, inputs=['angle', 'throttle'])
 
 def parse_args() -> argparse.Namespace:
