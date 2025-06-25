@@ -172,6 +172,7 @@ class TfLite(Interpreter):
         return self.invoke()
 
     def get_input_shapes(self):
+        print("\n\n\n\n\nget_input_shapes\n\n\n\n\n")
         assert self.input_shapes is not None, "Need to load model first"
         return self.input_shapes
 
