@@ -1,7 +1,6 @@
 import os
 from abc import ABC, abstractmethod
 import numpy as np
-from typing import Union, Sequence, List
 
 import tensorflow as tf
 from tensorflow import keras
@@ -14,38 +13,38 @@ class Interpreter(ABC):
     """ Base class to delegate between Keras, TFLite and TensorRT """
 
     @abstractmethod
-    def load(self, model_path: str) -> None:
+    def load(self, model_path):
         pass
 
-    def load_weights(self, model_path: str, by_name: bool = True) -> None:
+    def load_weights(self, model_path, by_name = True):
         raise NotImplementedError('Requires implementation')
 
-    def set_model(self, pilot: 'KerasPilot') -> None:
+    def set_model(self, pilot):
         """ Some interpreters will need the model"""
         pass
 
-    def set_optimizer(self, optimizer: tf.keras.optimizers.Optimizer) -> None:
+    def set_optimizer(self, optimizer):
         pass
 
     def compile(self, **kwargs):
         raise NotImplementedError('Requires implementation')
 
     @abstractmethod
-    def get_input_shapes(self) -> List[tf.TensorShape]:
+    def get_input_shapes(self):
         pass
 
     @abstractmethod
-    def predict(self, img_arr: np.ndarray, other_arr: np.ndarray) \
-            -> Sequence[Union[float, np.ndarray]]:
+    def predict(self, img_arr, other_arr) \
+            :
         pass
 
-    def predict_from_dict(self, input_dict) -> Sequence[Union[float, np.ndarray]]:
+    def predict_from_dict(self, input_dict):
         pass
 
-    def summary(self) -> str:
+    def summary(self):
         pass
 
-    def __str__(self) -> str:
+    def __str__(self):
         """ For printing interpreter """
         return type(self).__name__
 
@@ -54,15 +53,15 @@ class KerasInterpreter(Interpreter):
 
     def __init__(self):
         super().__init__()
-        self.model: tf.keras.Model = None
+        self.model = None
 
-    def set_model(self, pilot: 'KerasPilot') -> None:
+    def set_model(self, pilot):
         self.model = pilot.create_model()
 
-    def set_optimizer(self, optimizer: tf.keras.optimizers.Optimizer) -> None:
+    def set_optimizer(self, optimizer):
         self.model.optimizer = optimizer
 
-    def get_input_shapes(self) -> List[tf.TensorShape]:
+    def get_input_shapes(self):
         assert self.model, 'Model not set'
         return [inp.shape for inp in self.model.inputs]
 
@@ -82,8 +81,8 @@ class KerasInterpreter(Interpreter):
         else:
             return outputs.numpy().squeeze(axis=0)
 
-    def predict(self, img_arr: np.ndarray, other_arr: np.ndarray) \
-            -> Sequence[Union[float, np.ndarray]]:
+    def predict(self, img_arr, other_arr) \
+            :
         img_arr = np.expand_dims(img_arr, axis=0)
         inputs = img_arr
         if other_arr is not None:
@@ -96,16 +95,15 @@ class KerasInterpreter(Interpreter):
             input_dict[k] = np.expand_dims(v, axis=0)
         return self.invoke(input_dict)
 
-    def load(self, model_path: str) -> None:
+    def load(self, model_path):
         print(f'Loading model {model_path}')
         self.model = keras.models.load_model(model_path, compile=False)
 
-    def load_weights(self, model_path: str, by_name: bool = True) -> \
-            None:
+    def load_weights(self, model_path, by_name = True):
         assert self.model, 'Model not set'
         self.model.load_weights(model_path, by_name=by_name)
 
-    def summary(self) -> str:
+    def summary(self):
         return self.model.summary()
 
 
@@ -143,7 +141,7 @@ class TfLite(Interpreter):
     def compile(self, **kwargs):
         pass
 
-    def invoke(self) -> Sequence[Union[float, np.ndarray]]:
+    def invoke(self):
         self.interpreter.invoke()
         outputs = []
         for tensor in self.output_details:
@@ -155,7 +153,7 @@ class TfLite(Interpreter):
         return outputs if len(outputs) > 1 else outputs[0]
 
     def predict(self, img_arr, other_arr) \
-            -> Sequence[Union[float, np.ndarray]]:
+            :
         assert self.input_shapes and self.input_details, \
             "Tflite model not loaded"
         input_arrays = (img_arr, other_arr)
@@ -186,13 +184,13 @@ class TensorRT(Interpreter):
         self.frozen_func = None
         self.input_shapes = None
 
-    def get_input_shapes(self) -> List[tf.TensorShape]:
+    def get_input_shapes(self):
         return self.input_shapes
 
     def compile(self, **kwargs):
         pass
 
-    def load(self, model_path: str) -> None:
+    def load(self, model_path):
         saved_model_loaded = tf.saved_model.load(model_path,
                                                  tags=[tag_constants.SERVING])
         graph_func = saved_model_loaded.signatures[
@@ -200,8 +198,8 @@ class TensorRT(Interpreter):
         self.frozen_func = convert_var_to_const(graph_func)
         self.input_shapes = [inp.shape for inp in graph_func.inputs]
 
-    def predict(self, img_arr: np.ndarray, other_arr: np.ndarray) \
-            -> Sequence[Union[float, np.ndarray]]:
+    def predict(self, img_arr, other_arr) \
+            :
         # first reshape as usual
         img_arr = np.expand_dims(img_arr, axis=0).astype(np.float32)
         img_tensor = self.convert(img_arr)

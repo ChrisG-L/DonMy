@@ -291,13 +291,6 @@ class Manifest(object):
         self.deleted_indexes.update(record_indexes)
         self._update_catalog_metadata(update=True)
 
-    def restore_records(self, record_indexes):
-        # Does not actually delete the record, but marks it as deleted.
-        if isinstance(record_indexes, int):
-            record_indexes = {record_indexes}
-        self.deleted_indexes.difference_update(record_indexes)
-        self._update_catalog_metadata(update=True)
-
     def _add_catalog(self):
         current_length = len(self.catalog_paths)
         catalog_name = f'catalog_{current_length}.catalog'

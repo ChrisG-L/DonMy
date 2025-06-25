@@ -7,38 +7,16 @@ Functions that don't fit anywhere else.
 from PIL import Image
 import numpy as np
 
-ONE_BYTE_SCALE = 1.0 / 255.0
-
-'''
-IMAGES
-'''
-
 def normalize_image(img_arr_uint):
-    """
-    Convert uint8 numpy image array into [0,1] float image array
-    :param img_arr_uint:    [0,255]uint8 numpy image array
-    :return:                [0,1] float32 numpy image array
-    """
-    return img_arr_uint.astype(np.float64) * ONE_BYTE_SCALE
-
+    return img_arr_uint.astype(np.float64) * (1.0 / 255.0)
 
 def load_pil_image(filename, cfg):
-    """Loads an image from a file path as a PIL image. Also handles resizing.
-
-    Args:
-        filename (string): path to the image file
-        cfg (object): donkey configuration file
-
-    Returns: a PIL image.
-    """
     try:
         img = Image.open(filename)
         if img.height != cfg.IMAGE_H or img.width != cfg.IMAGE_W:
             img = img.resize((cfg.IMAGE_W, cfg.IMAGE_H))
-
         if cfg.IMAGE_DEPTH == 1:
             img = img.convert('L')
-
         return img
 
     except Exception as e:
@@ -47,28 +25,12 @@ def load_pil_image(filename, cfg):
 
 
 def load_image(filename, cfg):
-    """
-    :param string filename:     path to image file
-    :param cfg:                 donkey config
-    :return np.ndarray:         numpy uint8 image array
-    """
     img_arr = load_image_sized(filename, cfg.IMAGE_W, cfg.IMAGE_H, cfg.IMAGE_DEPTH)
 
     return img_arr
 
 
 def load_image_sized(filename, image_width, image_height, image_depth):
-    """Loads an image from a file path as a PIL image. Also handles resizing.
-
-    Args:
-        filename (string): path to the image file
-        image_width: width in pixels of the output image
-        image_height: height in pixels of the output image
-        image_depth: depth of the output image (1 for greyscale)
-
-    Returns:
-        (np.ndarray):         numpy uint8 image array.
-    """
     try:
         img = Image.open(filename)
         if img.height != image_height or img.width != image_width:
@@ -91,11 +53,7 @@ def load_image_sized(filename, image_width, image_height, image_depth):
         print(f'failed to load image from {filename}: {e.message}')
         return None
 
-def get_model_by_type(model_type: str, cfg: 'Config'):
-    '''
-    given the string model_type and the configuration settings in cfg
-    create a Keras model and return it.
-    '''
+def get_model_by_type(model_type, cfg):
     from parts.keras import KerasLinear, KerasIMU
     from parts.interpreter import TfLite, TensorRT
 

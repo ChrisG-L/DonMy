@@ -51,27 +51,7 @@ class Vehicle:
 
         self.parts.append(entry)
 
-    def start(self, rate_hz=10, verbose=False):
-        """
-        Start vehicle's main drive loop.
-
-        This is the main thread of the vehicle. It starts all the new
-        threads for the threaded parts then starts an infinite loop
-        that runs each part and updates the memory.
-
-        Parameters
-        ----------
-
-        rate_hz : int
-            The max frequency that the drive loop should run. The actual
-            frequency may be less than this if there are many blocking parts.
-        max_loop_count : int
-            Maximum number of loops the drive loop should execute. This is
-            used for testing that all the parts of the vehicle work.
-        verbose: bool
-            If debug output should be printed into shell
-        """
-
+    def start(self, rate_hz=20):
         try:
 
             self.on = True
@@ -109,9 +89,6 @@ class Vehicle:
             self.stop()
 
     def update_parts(self):
-        '''
-        loop over all parts
-        '''
         for entry in self.parts:
 
             run = True
