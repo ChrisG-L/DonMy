@@ -59,6 +59,7 @@ def get_model_by_type(model_type, cfg):
 
     input_shape = (cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)
     if 'tflite_' in model_type:
+        print("\n\n\n\n\nTFLITE\n\n\n\n\n")
         interpreter = TfLite()
         used_model_type = model_type.replace('tflite_', '')
     if 'tensorrt_' in model_type:
