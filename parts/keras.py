@@ -63,7 +63,7 @@ class KerasPilot(ABC):
     def seq_size(self):
         return 0
 
-    def run(self, img_arr, other_arr = None) :
+    def run(self, img_arr, other_arr = None):
         norm_arr = normalize_image(img_arr)
         np_other_array = np.array(other_arr) if other_arr else None
         return self.inference(norm_arr, np_other_array)
@@ -77,9 +77,7 @@ class KerasPilot(ABC):
         return self.interpreter_to_output(output)
 
     @abstractmethod
-    def interpreter_to_output(
-            self,
-            interpreter_out):
+    def interpreter_to_output(self, interpreter_out):
         pass
 
     def train(self,
@@ -93,10 +91,6 @@ class KerasPilot(ABC):
               verbose = 1,
               min_delta = .0005,
               patience = 5):
-        """
-        trains the model
-        """
-        assert isinstance(self.interpreter, KerasInterpreter)
         model = self.interpreter.model
         self.compile()
 
@@ -126,29 +120,15 @@ class KerasPilot(ABC):
         print(f'////////// Finished training in: {toc - tic} //////////')
         return history.history
 
-    def x_transform(
-            self,
-            record,
-            img_processor) \
-            :
-        """ Transforms the record into dictionary for x for training the
-        model to x,y, and applies an image augmentation. Here we assume the
-        model only takes the image as input. All model input layer's names
-        must be matched by dictionary keys."""
-        assert isinstance(record, TubRecord), "TubRecord required"
+    def x_transform(self, record, img_processor):
         img_arr = record.image(processor=img_processor)
         return {'img_in': img_arr}
 
-    def y_transform(self, record) \
-            :
-        """ Transforms the record into dictionary for y for training the
-        model to x,y. All model ouputs layer's names must be matched by
-        dictionary keys. """
+    def y_transform(self, record = None):
         raise NotImplementedError(f'{self} not ready yet for new training '
                                   f'pipeline')
 
     def output_types(self):
-        """ Used in tf.data, assume all types are doubles"""
         shapes = self.output_shapes()
         types = tuple({k: tf.float64 for k in d} for d in shapes)
         return types
@@ -157,7 +137,6 @@ class KerasPilot(ABC):
         return {}
 
     def __str__(self):
-        """ For printing model initialisation """
         return type(self).__name__
 
 class KerasLinear(KerasPilot):
@@ -179,15 +158,12 @@ class KerasLinear(KerasPilot):
         throttle = interpreter_out[1]
         return angle[0], throttle[0]
 
-    def y_transform(self, record) \
-            :
-        assert isinstance(record, TubRecord), 'TubRecord expected'
+    def y_transform(self, record):
         angle: float = record.underlying['user/angle']
         throttle: float = record.underlying['user/throttle']
         return {'n_outputs0': angle, 'n_outputs1': throttle}
 
     def output_shapes(self):
-        # need to cut off None from [None, 120, 160, 3] tensor shape
         img_shape = self.get_input_shape('img_in')[1:]
         shapes = ({'img_in': tf.TensorShape(img_shape)},
                   {'n_outputs0': tf.TensorShape([]),
@@ -195,7 +171,6 @@ class KerasLinear(KerasPilot):
         return shapes
 
 class KerasIMU(KerasPilot):
-    # keys for imu data in TubRecord
     imu_vec = [f'imu/{f}_{x}' for f in ('acl', 'gyr') for x in 'xyz']
 
     def __init__(self,
@@ -214,33 +189,23 @@ class KerasIMU(KerasPilot):
     def compile(self):
         self.interpreter.compile(optimizer=self.optimizer, loss='mse')
 
-    def interpreter_to_output(self, interpreter_out) :
+    def interpreter_to_output(self, interpreter_out):
         angle = interpreter_out[0]
         throttle = interpreter_out[1]
         return angle[0], throttle[0]
 
-    def x_transform(
-            self,
-            record,
-            img_processor) \
-            :
-        # this transforms the record into x for training the model to x,y
-        assert isinstance(record, TubRecord), 'TubRecord expected'
+    def x_transform(self, record, img_processor):
         img_arr = record.image(processor=img_processor)
         imu_arr = np.array([record.underlying[k] for k in self.imu_vec])
         return {'img_in': img_arr, 'imu_in': imu_arr}
 
-    def y_transform(self, record) \
-            :
-        assert isinstance(record, TubRecord), "TubRecord expected"
+    def y_transform(self, record):
         angle: float = record.underlying['user/angle']
         throttle: float = record.underlying['user/throttle']
         return {'out_0': angle, 'out_1': throttle}
 
     def output_shapes(self):
-        # need to cut off None from [None, 120, 160, 3] tensor shape
         img_shape = self.get_input_shape('img_in')[1:]
-        # the keys need to match the models input/output layers
         shapes = ({'img_in': tf.TensorShape(img_shape),
                    'imu_in': tf.TensorShape([self.num_imu_inputs])},
                   {'out_0': tf.TensorShape([]),
