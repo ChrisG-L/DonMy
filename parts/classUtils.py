@@ -1,5 +1,15 @@
 # -*- coding: utf-8 -*-
 
+class UserPilotCondition:
+    def __init__(self, show_pilot_image:bool = False) -> None:
+        self.show_pilot_image = show_pilot_image
+
+    def run(self, mode, user_image, pilot_image):
+        if mode == 'user':
+            return True, False, user_image
+        else:
+            return False, True, pilot_image if self.show_pilot_image else user_image
+
 class ToggleRecording:
     def __init__(self, auto_record_on_throttle=True, record_in_autopilot=False):
         self.auto_record_on_throttle = auto_record_on_throttle

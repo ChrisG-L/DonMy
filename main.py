@@ -6,7 +6,7 @@ import time
 from main_parts.vehicle import Vehicle
 from main_parts.utils import get_model_by_type
 from main_parts.config import load_config
-from parts.classUtils import ToggleRecording, DriveMode
+from parts.classUtils import ToggleRecording, DriveMode, UserPilotCondition
 
 from parts.oakd_camera import OakDCamera
 from parts.tub_v2 import TubWriter
@@ -21,6 +21,10 @@ def drive(cfg, model_path="./models/mypilot.tflite", use_joystick=False, model_t
     V.add(cam, inputs=[], outputs=['cam/image_array'], threaded=True)
 
     ctr = add_user_controller(V, cfg, use_joystick)
+
+    V.add(UserPilotCondition(show_pilot_image=getattr(cfg, 'SHOW_PILOT_IMAGE', False)),
+        inputs=['user/mode', "cam/image_array", "cam/image_array_trans"],
+        outputs=['run_user', "run_pilot", "ui/image_array"])
 
     add_imu(V, cfg)
 
