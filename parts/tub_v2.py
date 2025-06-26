@@ -19,14 +19,10 @@ class Tub(object):
                                  metadata=metadata, max_len=max_catalog_len,
                                  read_only=read_only)
         self.input_types = dict(zip(self.inputs, self.types))
-        # Create images folder if necessary
         if not os.path.exists(self.images_base_path):
             os.makedirs(self.images_base_path, exist_ok=True)
 
     def write_record(self, record=None):
-        """
-        Can handle various data types including images.
-        """
         contents = dict()
         for key, value in record.items():
             if value is None:
@@ -36,7 +32,6 @@ class Tub(object):
             else:
                 input_type = self.input_types[key]
                 if input_type == 'float':
-                    # Handle np.float() types gracefully
                     contents[key] = float(value)
                 elif input_type == 'str':
                     contents[key] = value
@@ -49,21 +44,18 @@ class Tub(object):
                 elif input_type == 'list' or input_type == 'vector':
                     contents[key] = list(value)
                 elif input_type == 'image_array':
-                    # Handle image array
                     image = Image.fromarray(np.uint8(value))
                     name = Tub._image_file_name(self.manifest.current_index, key)
                     image_path = os.path.join(self.images_base_path, name)
                     image.save(image_path)
                     contents[key] = name
                 elif input_type == 'gray16_array':
-                    # save np.uint16 as a 16bit png
                     image = Image.fromarray(np.uint16(value))
                     name = Tub._image_file_name(self.manifest.current_index, key, ext='.png')
                     image_path = os.path.join(self.images_base_path, name)
                     image.save(image_path)
                     contents[key]=name
 
-        # Private properties
         contents['_timestamp_ms'] = int(round(time.time() * 1000))
         contents['_index'] = self.manifest.current_index
         contents['_session_id'] = self.manifest.session_id
@@ -71,7 +63,6 @@ class Tub(object):
         self.manifest.write_record(contents)
 
     def delete_last_n_records(self, n):
-        # build ordered list of non-deleted indexes
         all_alive_indexes = sorted(set(range(self.manifest.current_index))
                                    - self.manifest.deleted_indexes)
         to_delete_indexes = all_alive_indexes[-n:]
@@ -94,7 +85,6 @@ class Tub(object):
     def _image_file_name(cls, index, key, extension='.jpg'):
         key_prefix = key.replace('/', '_')
         name = '_'.join([str(index), key_prefix, extension])
-        # Return relative paths to maintain portability
         return name
 
 

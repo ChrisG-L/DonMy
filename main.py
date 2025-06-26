@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-#
 import argparse
 
 import main_parts.config as cfg
@@ -89,8 +87,7 @@ def add_drivetrain(V):
             print(f"Error /dev/tty: {e}")
     V.add(vesc, inputs=['angle', 'throttle'])
 
-def parse_args() -> argparse.Namespace:
-    """Configure and parse command-line options."""
+def parse_args():
     parser = argparse.ArgumentParser(
         prog="main.py",
         description="Run in various modes",

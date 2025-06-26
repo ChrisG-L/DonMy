@@ -1,6 +1,5 @@
 import os
 
-# Configuration constants
 CAR_PATH = os.path.dirname(os.path.realpath(__file__))
 DATA_PATH = os.path.join(CAR_PATH, 'data')
 MODELS_PATH = os.path.join(CAR_PATH, 'models')

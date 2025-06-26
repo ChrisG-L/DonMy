@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
-
 class UserPilotCondition:
-    def __init__(self, show_pilot_image:bool = False) -> None:
+    def __init__(self, show_pilot_image=False):
         self.show_pilot_image = show_pilot_image
 
     def run(self, mode, user_image, pilot_image):
@@ -14,11 +12,11 @@ class ToggleRecording:
     def __init__(self, auto_record_on_throttle=True, record_in_autopilot=False):
         self.auto_record_on_throttle = auto_record_on_throttle
         self.record_in_autopilot = record_in_autopilot
-        self.recording_latch: bool = None
-        self.toggle_latch: bool = False
+        self.recording_latch = None
+        self.toggle_latch = False
         self.last_recording = None
 
-    def run(self, mode: str, recording: bool):
+    def run(self, mode, recording):
         recording_in = recording
         if recording_in != self.last_recording:
             print(f"Recording Change = {recording_in}")

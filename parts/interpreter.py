@@ -10,7 +10,6 @@ from tensorflow.python.framework.convert_to_constants import \
 from tensorflow.python.saved_model import tag_constants, signature_constants
 
 class Interpreter(ABC):
-    """ Base class to delegate between Keras, TFLite and TensorRT """
 
     @abstractmethod
     def load(self, model_path):
@@ -20,7 +19,6 @@ class Interpreter(ABC):
         raise NotImplementedError('Requires implementation')
 
     def set_model(self, pilot):
-        """ Some interpreters will need the model"""
         pass
 
     def set_optimizer(self, optimizer):
@@ -34,8 +32,7 @@ class Interpreter(ABC):
         pass
 
     @abstractmethod
-    def predict(self, img_arr, other_arr) \
-            :
+    def predict(self, img_arr, other_arr):
         pass
 
     def predict_from_dict(self, input_dict):
@@ -45,7 +42,6 @@ class Interpreter(ABC):
         pass
 
     def __str__(self):
-        """ For printing interpreter """
         return type(self).__name__
 
 

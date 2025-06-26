@@ -36,8 +36,6 @@ def load_image_sized(filename, image_width, image_height, image_depth):
 
         img_arr = np.asarray(img)
 
-        # If the PIL image is greyscale, the np array will have shape (H, W)
-        # Need to add a depth channel by expanding to (H, W, 1)
         if img.mode == 'L':
             h, w = img_arr.shape[:2]
             img_arr = img_arr.reshape(h, w, 1)

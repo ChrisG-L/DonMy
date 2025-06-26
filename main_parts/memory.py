@@ -1,15 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Jun 25 11:07:48 2017
-
-@author: wroscoe
-"""
-
 class Memory:
-    """
-    A convenience class to save key/value pairs.
-    """
     def __init__(self, *args, **kw):
         self.d = {}
 

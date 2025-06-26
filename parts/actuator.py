@@ -1,9 +1,3 @@
-"""
-actuators.py
-Classes to control the motors and servos. These classes
-are wrapped in a mixer class before being used in the drive loop.
-"""
-
 import time
 
 class VESC:
@@ -26,5 +20,4 @@ class VESC:
 
     def run(self, angle, throttle):
         self.v.set_servo((angle * self.angle_scale) + self.angle_offset)
-        # print(f"\tThro : {throttle} | Perc : {self.percent} ==> {throttle*self.percent}")
         self.v.set_duty_cycle(throttle*self.percent)

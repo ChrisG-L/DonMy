@@ -160,8 +160,8 @@ class KerasLinear(KerasPilot):
         return angle[0], throttle[0]
 
     def y_transform(self, record):
-        angle: float = record.underlying['user/angle']
-        throttle: float = record.underlying['user/throttle']
+        angle = record.underlying['user/angle']
+        throttle = record.underlying['user/throttle']
         return {'n_outputs0': angle, 'n_outputs1': throttle}
 
     def output_shapes(self):
@@ -172,11 +172,6 @@ class KerasLinear(KerasPilot):
         return shapes
 
 class KerasMemory(KerasLinear):
-    """
-    The KerasLinearWithMemory is based on KerasLinear but uses the last n
-    steering and throttle commands as input in order to produce smoother
-    steering outputs
-    """
     def __init__(self,
                  interpreter = KerasInterpreter(),
                  input_shape = (120, 160, 3),
@@ -203,12 +198,9 @@ class KerasMemory(KerasLinear):
         print(f'Loaded memory model with mem length {self.mem_length}')
 
     def run(self, img_arr, other_arr):
-        # Only called at start to fill the previous values
-
         np_mem_arr = np.array(self.mem_seq).reshape((2 * self.mem_length,))
         img_arr_norm = normalize_image(img_arr)
         angle, throttle = super().inference(img_arr_norm, np_mem_arr)
-        # fill new values into back of history list for next call
         self.mem_seq.popleft()
         self.mem_seq.append([angle, throttle])
         return angle, throttle
@@ -242,8 +234,7 @@ class KerasMemory(KerasLinear):
                    'n_outputs1': tf.TensorShape([])})
         return shapes
 
-    def __str__(self) -> str:
-        """ For printing model initialisation """
+    def __str__(self):
         return super().__str__() \
             + f'-L:{self.mem_length}-D:{self.mem_depth}'
 

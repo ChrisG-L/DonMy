@@ -15,7 +15,6 @@ class Seekable(object):
         self.cumulative_lengths = list()
         self.method = 'r' if read_only else 'a+'
         self.file = open(file, self.method, newline=NEWLINE)
-        # If file is read only improve performance by memory mapping the file.
         if self.method == 'r':
             self.file = mmap.mmap(self.file.fileno(), length=0,
                                   access=mmap.ACCESS_READ)

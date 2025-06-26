@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 import time
 from threading import Thread
 from .memory import Memory
@@ -37,15 +34,11 @@ class Vehicle:
 
     def start(self, rate_hz=20):
         try:
-
             self.on = True
 
             for entry in self.parts:
                 if entry.get('thread'):
-                    # start the update thread
                     entry.get('thread').start()
-
-            # wait until the parts warm up.
 
             loop_start_time = time.time()
             loop_count = 0
@@ -54,8 +47,6 @@ class Vehicle:
                 loop_count += 1
 
                 self.update_parts()
-
-                # stop drive loop if loop_count exceeds max_loopcount
 
                 sleep_time = 1.0 / rate_hz - (time.time() - start_time)
                 if sleep_time > 0.0:
@@ -76,23 +67,18 @@ class Vehicle:
         for entry in self.parts:
 
             run = True
-            # check run condition, if it exists
             if entry.get('run_condition'):
                 run_condition = entry.get('run_condition')
                 run = self.mem.get([run_condition])[0]
 
             if run:
-                # get part
                 p = entry['part']
-                # get inputs from memory
                 inputs = self.mem.get(entry['inputs'])
-                # run the part
                 if entry.get('thread'):
                     outputs = p.run_threaded(*inputs)
                 else:
                     outputs = p.run(*inputs)
 
-                # save the output to memory
                 if outputs is not None:
                     self.mem.put(entry['outputs'], outputs)
 
@@ -101,7 +87,6 @@ class Vehicle:
             try:
                 entry['part'].shutdown()
             except AttributeError:
-                # usually from missing shutdown method, which should be optional
                 pass
             except Exception as e:
                 print(f"Error: {e}")

@@ -1,11 +1,9 @@
-# parts/oakd_camera.py
 import depthai as dai
 import cv2
 from threading import Thread
 
 class OakDCamera:
     def __init__(self, width=160, height=120, fps=20):
-        # --- pipeline DepthAI ---
         self.outSz = (width, height)
         self.pipeline = dai.Pipeline()
         cam = self.pipeline.create(dai.node.ColorCamera)
@@ -19,7 +17,6 @@ class OakDCamera:
         xout.setStreamName("rgb")
         cam.isp.link(xout.input)
 
-        # --- device ---
         self.device = dai.Device(self.pipeline)
         self.q = self.device.getOutputQueue("rgb", 4, False)
 
@@ -38,7 +35,7 @@ class OakDCamera:
         return self.frame
 
     def run(self):
-        return self.frame            # doit retourner un np.ndarray RGB
+        return self.frame
 
     def shutdown(self):
         self.running = False
