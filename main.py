@@ -3,7 +3,6 @@ import argparse
 import main_parts.config as cfg
 from main_parts.vehicle import Vehicle
 from main_parts.utils import get_model
-from main_parts.config import load_config
 from parts.classUtils import ToggleRecording, DriveMode, UserPilotCondition
 
 from parts.oakd_camera import OakDCamera
