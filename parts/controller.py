@@ -20,6 +20,9 @@ class Joystick(object):
                  throttle_dir=-1.0,
                  auto_record_on_throttle=True):
 
+        self.SPEED = 0.25
+        self.MAX_SPEED = 0.45
+
         # Paramètres du joystick
         self.dev_fn = dev_fn
         self.jsdev = None
@@ -63,6 +66,7 @@ class Joystick(object):
         self.img_arr = None
         self.angle = 0.0
         self.throttle = 0.0
+        self.debrid_throttle = False
         self.mode = 'user'
         self.mode_latch = None
         self.poll_delay = poll_delay
@@ -83,7 +87,7 @@ class Joystick(object):
         # Maps des triggers
         self.button_down_trigger_map = {
             'Y': self.erase_last_N_records,
-            'A': self.emergency_stop,
+            'A': self.set_debrid_throttle,
         }
 
         self.axis_trigger_map = {
@@ -233,8 +237,17 @@ class Joystick(object):
         temp = (self.throttle_dir * axis_val)
         if temp >= 0:
             temp = 0
-        self.throttle = max(-0.30, temp)
+        if self.debrid_throttle == True:
+            self.throttle = max(-self.MAX_SPEED, temp)
+        else:
+            self.throttle = max(-self.SPEED, temp)
         self.on_throttle_changes()
+
+    def set_debrid_throttle(self):
+        if (self.debrid_throttle == True):
+            self.debrid_throttle = False
+        else:
+            self.debrid_throttle = True
 
     def set_throttle_back(self, axis_val):
         """Définit l'accélération arrière"""
@@ -242,7 +255,10 @@ class Joystick(object):
         temp = (self.throttle_dir * axis_val)
         if temp <= 0:
             temp = 0
-        self.throttle = min(0.30, temp)
+        if self.debrid_throttle == True:
+            self.throttle = min(self.MAX_SPEED, temp)
+        else:
+            self.throttle = min(self.SPEED, temp)
         self.on_throttle_changes()
         print(f'enregistrement: {self.recording}')
 
