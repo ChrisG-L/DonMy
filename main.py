@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 #
 import argparse
-import time
 
 from main_parts.vehicle import Vehicle
 from main_parts.utils import get_model_by_type
@@ -126,8 +125,8 @@ def add_drivetrain(V):
 def parse_args() -> argparse.Namespace:
     """Configure and parse command-line options."""
     parser = argparse.ArgumentParser(
-        prog="manage.py",
-        description="Run DonkeyCar in various modes",
+        prog="main.py",
+        description="Run in various modes",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 

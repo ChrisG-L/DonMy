@@ -17,22 +17,6 @@ class Vehicle:
 
     def add(self, part, inputs=[], outputs=[],
             threaded=False, run_condition=None):
-        """
-        Method to add a part to the vehicle drive loop.
-
-        Parameters
-        ----------
-            part: class
-                donkey vehicle part has run() attribute
-            inputs : list
-                Channel names to get from memory.
-            outputs : list
-                Channel names to save to memory.
-            threaded : boolean
-                If a part should be run in a separate thread.
-            run_condition : str
-                If a part should be run or not
-        """
         assert type(inputs) is list, "inputs is not a list: %r" % inputs
         assert type(outputs) is list, "outputs is not a list: %r" % outputs
         assert type(threaded) is bool, "threaded is not a boolean: %r" % threaded

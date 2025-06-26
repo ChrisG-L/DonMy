@@ -34,7 +34,6 @@ class OakDCamera:
                 img = packet.getCvFrame()
                 self.frame = cv2.resize(img, self.outSz, interpolation=cv2.INTER_AREA)
 
-    # Méthode appelée à chaque cycle DonkeyCar
     def run_threaded(self):
         return self.frame
 
