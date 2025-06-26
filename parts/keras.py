@@ -273,48 +273,6 @@ def default_memory(input_shape=(120, 160, 3), mem_length=3, mem_depth=0):
     model = Model(inputs=[img_in, mem_in], outputs=outputs, name='memory')
     return model
 
-class KerasIMU(KerasPilot):
-    imu_vec = [f'imu/{f}_{x}' for f in ('acl', 'gyr') for x in 'xyz']
-
-    def __init__(self,
-                 interpreter = KerasInterpreter(),
-                 input_shape = (120, 160, 3),
-                 num_outputs = 2, num_imu_inputs = 6):
-        self.num_outputs = num_outputs
-        self.num_imu_inputs = num_imu_inputs
-        super().__init__(interpreter, input_shape)
-
-    def create_model(self):
-        return default_imu(num_outputs=self.num_outputs,
-                           num_imu_inputs=self.num_imu_inputs,
-                           input_shape=self.input_shape)
-
-    def compile(self):
-        self.interpreter.compile(optimizer=self.optimizer, loss='mse')
-
-    def interpreter_to_output(self, interpreter_out):
-        angle = interpreter_out[0]
-        throttle = interpreter_out[1]
-        return angle[0], throttle[0]
-
-    def x_transform(self, record, img_processor):
-        img_arr = record.image(processor=img_processor)
-        imu_arr = np.array([record.underlying[k] for k in self.imu_vec])
-        return {'img_in': img_arr, 'imu_in': imu_arr}
-
-    def y_transform(self, record):
-        angle: float = record.underlying['user/angle']
-        throttle: float = record.underlying['user/throttle']
-        return {'out_0': angle, 'out_1': throttle}
-
-    def output_shapes(self):
-        img_shape = self.get_input_shape('img_in')[1:]
-        shapes = ({'img_in': tf.TensorShape(img_shape),
-                   'imu_in': tf.TensorShape([self.num_imu_inputs])},
-                  {'out_0': tf.TensorShape([]),
-                   'out_1': tf.TensorShape([])})
-        return shapes
-
 def conv2d(filters, kernel, strides, layer_num, activation='relu'):
     return Convolution2D(filters=filters,
                          kernel_size=(kernel, kernel),
@@ -352,31 +310,4 @@ def default_n_linear(num_outputs, input_shape=(120, 160, 3)):
             Dense(1, activation='linear', name='n_outputs' + str(i))(x))
 
     model = Model(inputs=[img_in], outputs=outputs, name='linear')
-    return model
-
-def default_imu(num_outputs, num_imu_inputs, input_shape):
-    drop = 0.2
-    img_in = Input(shape=input_shape, name='img_in')
-    imu_in = Input(shape=(num_imu_inputs,), name="imu_in")
-
-    x = core_cnn_layers(img_in, drop)
-    x = Dense(100, activation='relu')(x)
-    x = Dropout(.1)(x)
-
-    y = imu_in
-    y = Dense(14, activation='relu')(y)
-    y = Dense(14, activation='relu')(y)
-    y = Dense(14, activation='relu')(y)
-
-    z = concatenate([x, y])
-    z = Dense(50, activation='relu')(z)
-    z = Dropout(.1)(z)
-    z = Dense(50, activation='relu')(z)
-    z = Dropout(.1)(z)
-
-    outputs = []
-    for i in range(num_outputs):
-        outputs.append(Dense(1, activation='linear', name='out_' + str(i))(z))
-
-    model = Model(inputs=[img_in, imu_in], outputs=outputs, name='imu')
     return model

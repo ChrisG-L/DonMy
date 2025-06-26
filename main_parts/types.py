@@ -13,13 +13,7 @@ TubRecordDict = TypedDict(
         'cam/image_array': str,
         'user/angle': float,
         'user/throttle': float,
-        'user/mode': str,
-        'imu/acl_x': Optional[float],
-        'imu/acl_y': Optional[float],
-        'imu/acl_z': Optional[float],
-        'imu/gyr_x': Optional[float],
-        'imu/gyr_y': Optional[float],
-        'imu/gyr_z': Optional[float],
+        'user/mode': str
     }
 )
 
@@ -49,10 +43,10 @@ class TubRecord(object):
             full_path = os.path.join(self.base_path, 'images', image_path)
 
             if as_nparray:
-                _image = load_image(full_path, cfg=self.config)
+                _image = load_image(full_path)
             else:
                 # If you just want the raw Image
-                _image = load_pil_image(full_path, cfg=self.config)
+                _image = load_pil_image(full_path)
             if processor:
                 _image = processor(_image)
             # only cache images if config does not forbid it
